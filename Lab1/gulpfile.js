@@ -7,13 +7,13 @@ gulp.task ('testTask', function () {
   console.log ('This is a test task!');
 });
 
-/*gulp.task('browser-sync', function() {
+gulp.task('browser-sync', function() {
     browserSync.init({
         server: {
             baseDir: "./"
         }
     });
-});*/
+});/**/
 
 //копіювання HTML файлів в папку dist
 gulp.task ( "html", function () {
