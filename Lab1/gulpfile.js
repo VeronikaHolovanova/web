@@ -77,4 +77,4 @@ var sass = require ("gulp-sass"), //конвертує SASS в CSS
     rename = require ("gulp-rename"); //перейменування файлів
 
 //Запуск тасків за замовчуванням
-gulp.task ("default", gulp.series("html", "sass", "scripts", "imgs",/*"browser-sync",*/ "watch",));
+gulp.task ("default", gulp.series("html", "sass", "scripts", "imgs","browser-sync",/**/ "watch",));
