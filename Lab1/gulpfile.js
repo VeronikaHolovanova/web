@@ -92,7 +92,7 @@ function browserSync() {
         server: {
             baseDir: './'
         },
-        //port: 3000
+        port: 3000
     });
 }
 
