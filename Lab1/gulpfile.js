@@ -1,5 +1,5 @@
 //Підключаємо gulp
-var gulp = require ("gulp");
+var gulp = require ('gulp');
 var browserSync = require('browser-sync').create();
 
 //Створюємо тестовий таск
