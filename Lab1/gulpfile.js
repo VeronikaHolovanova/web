@@ -1,80 +1,103 @@
-//Підключаємо gulp
-var gulp = require ("gulp");
-var browserSync = require('browser-sync').create();
+const {
+    src,
+    dest,
+    parallel,
+    series,
+    watch
+} = require('gulp');
 
-//Створюємо тестовий таск
-gulp.task ('testTask', function () {
-  console.log ('This is a test task!');
-});
+// Load plugins
 
-/*gulp.task('browser-sync', function() {
-    browserSync.init({
-        server: {
-            baseDir: "./"
-        }
-    });
-});*/
+const uglify = require('gulp-uglify');
+const rename = require('gulp-rename');
+const sass = require('gulp-sass');
+const autoprefixer = require('gulp-autoprefixer');
+const cssnano = require('gulp-cssnano');
+const concat = require('gulp-concat');
+const clean = require('gulp-clean');
+const imagemin = require('gulp-imagemin');
+const changed = require('gulp-changed');
+const browsersync = require('browser-sync').create();
 
-//копіювання HTML файлів в папку dist
-gulp.task ( "html", function () {
-    return gulp.src ( "src / *. html")
-    .pipe (gulp.dest ( "dist"));
-});
+// Clean dist
 
-//об'єднання, компіляція Sass в CSS, додавання префіксів і подальша мінімізація коду
-gulp.task ( "sass", function () {
-    return gulp.src ( "src / sass / *. sass")
-        .pipe (concat ( 'styles.sass'))
-        .pipe (sass ())
-        .pipe (autoprefixer ({
-            browsers: [ 'last 2 versions'],
-            cascade: false
-         }))
-        .pipe (cssnano ())
-        .pipe (rename ({suffix: '.min'}))
-        .pipe (gulp.dest ( "dist / css"));
-});
+function clear() {
+    return src('./dist/*', {
+            read: false
+        })
+        .pipe(clean());
+}
 
-//об'єднання і стиснення JS-файлів
-gulp.task ( "scripts", function () {
-    return gulp.src ( "src / js / *. js") //вихідна директорія файлів
-        .pipe (concat ( 'scripts.js')) // конкатенація js-файлів в один
-        .pipe (uglify ()) //стиснення коду
-        .pipe (rename ({suffix: '.min'})) //перейменування файлу з
-                                          //приставкою .min
-        .pipe (gulp.dest ( "dist / js")); // директорія продакшена
-});
+// JS функція
 
-//cтискання зображень
-gulp.task ( 'imgs', function () {
-    return gulp.src ( "src / images /*.+ (jpg | jpeg | png | gif)")
-        .pipe (imagemin ({
-            progressive: true,
-            svgoPlugins: [{removeViewBox: false}],
-            interlaced: true
+function js() {
+    const source = './app/js/*.js';
+
+    return src(source)
+        .pipe(changed(source))
+        .pipe(concat('bundle.js'))
+        .pipe(uglify())
+        .pipe(rename({
+            extname: '.min.js'
         }))
-        .pipe (gulp.dest ( "dist / images"))
-});
+        .pipe(dest('./dist/js/'))
+        .pipe(browsersync.stream());
+}
 
-//відстежування за змінами у файлах
-gulp.task ( "watch", function () {
-    gulp.watch ( "src / *. html", gulp.series("html"));
-    gulp.watch ( "src / js / *. js", gulp.series("scripts"));
-    gulp.watch ( "src / sass / *. sass", gulp.series("sass"));
-    gulp.watch ( "src / images /*.+ (jpg | jpeg | png | gif)", gulp.series("imgs"));
-});
+// CSS функція
 
+function css() {
+    const source = './app/sass/main.sass';
 
-//додаткові плагіни Gulp
-var sass = require ("gulp-sass"), //конвертує SASS в CSS
-    cssnano = require ("gulp-cssnano"), //мінімізація CSS
-    autoprefixer = require ('gulp-autoprefixer'), //додавання префіксів в
-                                                  //CSS для підтримки 
-                                                  //старих браузерів
-    imagemin = require ('gulp-imagemin'), //стиснення зображень
-    concat = require ("gulp-concat"), //об'єднання файлів - конкатенація
-    uglify = require ("gulp-uglify"), //мінімізація javascript
-    rename = require ("gulp-rename"); //перейменування файлів
+    return src(source)
+        .pipe(changed(source))
+        .pipe(sass())
+        .pipe(autoprefixer({
+            overrideBrowserslist: ['last 2 versions'],
+            cascade: false
+        }))
+        .pipe(rename({
+            extname: '.min.css'
+        }))
+        .pipe(cssnano())
+        .pipe(dest('./dist/css/'))
+        .pipe(browsersync.stream());
+}
 
-//Запуск тасків за замовчуванням
-gulp.task ("default", gulp.series("html", "sass", "scripts", "imgs",/*"browser-sync",*/ "watch",));
+// Оптимізація img
+function img() {
+    return src('./app/img/*')
+        .pipe(imagemin())
+        .pipe(dest('./dist/img'));
+}
+// Тестова функція для html
+function html() {
+    return src('./app/*.html')
+        .pipe(dest('./dist/html'));
+}
+
+// Перегляд зміни файлів
+
+function watchFiles() {
+    watch('./app/scss/*', css);
+    watch('./app/js/*', js);
+    watch('./app/img/*', img);
+    watch('./app/*.html', html);
+}
+
+// BrowserSync
+
+function browserSync() {
+    browsersync.init({
+        server: {
+            baseDir: './'
+        },
+        //port: 3000
+    });
+}
+
+// Cтворення тасків
+
+exports.watch = parallel(watchFiles, browserSync);
+exports.default = series(parallel(js, css, img));
+exports.clean = parallel(clear);
